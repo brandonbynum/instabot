@@ -1,6 +1,7 @@
 import requests
 import time
 from bs4 import BeautifulSoup
+import keyboard
 
 
 # Removes 'k'(thousands) or 'm'(millions) from number.
@@ -20,9 +21,9 @@ def clean_number(number):
 
 # Pulls followers, following, posts, and makes following to follower ratio.
 # returns dictionary storing all values
-def get_user_data(user):
+def get_user_data(username):
     # Pull HTML of user's instagram page
-    html = requests.get(url + user).content
+    html = requests.get(url + username).content
     soup = BeautifulSoup(html, "lxml")
 
     # Grab the meta tag with the followers, following, and post count
@@ -44,20 +45,47 @@ def get_user_data(user):
 
     following = data[data.find('s,') + 2: data.find('Following')].strip()
     posts = data[data.find('g,') + 2: data.find('Posts') - 1].strip()
-    ratio = int(followers.replace(',', '')) / int(following.replace(',', ''))
+    ratio = round(int(followers.replace(',', '')) / int(following.replace(',', '')), 2)
 
-    return {'followers': followers, 'following': following, 'posts': posts, 'ratio': ratio}
+    return {'username': username,'followers': followers, 'following': following, 'posts': posts, 'ratio': ratio}
+
+
+def enter_users():
+    usernames = []
+    print('Enter a username following the "@". Next press "Enter" to add a username or type "/done"' +
+    'and press "Enter" to finish entering usernames.')
+    while True:
+        user = input('>> ')
+        if user == '/done':
+            break
+        usernames.append(user)
+    return usernames
+
+
 
 
 # Start of program    
 url = 'https://instagram.com/'
 
-# Input desired instagram user name
-user = input('\nEnter Instagram name @')
+usernames = enter_users()
+print('Fetching data ...')
+data = {}
+percent = 0
+for i, user in enumerate(usernames):
+    data[user] = get_user_data(user)
+    percent +=  int(round(1 / len(usernames) * 100, 0))
+    print(str(percent) + '%')
 
-data = get_user_data(user)
+print('Done! Here is your data ...\n')
 
-print('\n@' + user, 'currently has', data['posts'], 'posts with', data['followers'], 'followers, '
-'while following', data['following'], 'other users.')
-print('Follower to Following Ratio:', str(round(data['ratio'], 2)) + '%\n\n')
+for user in usernames:
+    username = data[user]['username']
+    posts = data[user]['posts']
+    followers = data[user]['followers']
+    following = data[user]['following']
+    ratio = str(data[user]['ratio'])
+
+    print('@' + username, 'currently has', posts, 'posts with', followers, 'followers, '
+    'while following', following, 'other users.')
+    print('Follower to Following Ratio:', ratio + '%\n')
 
