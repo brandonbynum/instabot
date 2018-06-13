@@ -1,3 +1,6 @@
+#! python
+# A script that currently fetches instagram user information by input and webscraping.
+
 import requests
 import time
 from bs4 import BeautifulSoup
@@ -49,7 +52,7 @@ def get_user_data(username):
 
     return {'username': username,'followers': followers, 'following': following, 'posts': posts, 'ratio': ratio}
 
-
+# Creates a list of usernames from user input and returns the list.
 def enter_users():
     usernames = []
     print('Enter a username following the "@". Next press "Enter" to add a username or type "/done"' +
@@ -87,5 +90,5 @@ for user in usernames:
 
     print('@' + username, 'currently has', posts, 'posts with', followers, 'followers, '
     'while following', following, 'other users.')
-    print('Follower to Following Ratio:', ratio + '%\n')
+    print('Follower to Follow Ratio:', ratio + '%\n')
 
