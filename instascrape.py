@@ -45,12 +45,14 @@ def get_user_data(username):
     # Fix value if value > 10,000
     if 'k' in followers or 'm' in followers:
         followers = clean_number(followers)
-
+    
+    # Extract the numnber from the string
     following = data[data.find('s,') + 2: data.find('Following')].strip()
     posts = data[data.find('g,') + 2: data.find('Posts') - 1].strip()
     ratio = round(int(followers.replace(',', '')) / int(following.replace(',', '')), 2)
 
     return {'username': username,'followers': followers, 'following': following, 'posts': posts, 'ratio': ratio}
+
 
 # Creates a list of usernames from user input and returns the list.
 def enter_users():
