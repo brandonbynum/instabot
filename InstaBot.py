@@ -1,6 +1,9 @@
 from time import sleep
 from selenium.webdriver.common.by import By
 from selenium import webdriver
+from selenium.common.exceptions import NoSuchElementException
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 import getpass
 
 
@@ -25,12 +28,11 @@ class InstaBot():
         # username = input('Username: ')
         # browser.find_element_by_name('username').send_keys(username)
 
-
         # Enter instagram password from console
         # password = getpass.getpass('Password: ')
         # browser.find_element_by_name('password').send_keys(password)
 
-        # main input
+        # Enter Username and Password
         username  = self.username
         browser.find_element_by_name('username').send_keys(username)
 
@@ -40,8 +42,28 @@ class InstaBot():
         # Click login button
         browser.find_element_by_xpath('//button[text()="Log in"]').click()
 
-        # Allow page time to load
-        sleep(3)
+    def verificationCheck(self):
+        browser = self.browser
+        # Check if verification code is needed.
+        # If so, enter the code in terminal.
+        try:
+            browser.find_element_by_xpath('//*[@id="react-root"]/section/div/div/div[3]/form/span/button[text()="Send Security Code"]').click()
+            print('A security code is required to login. Please check your email for the code and enter it.')
+            code = input('Code: ')
+            # Input Key and Submit
+            browser.find_element_by_xpath('//*[@id="security_code"]').send_keys(code)
+            browser.find_element_by_xpath('//*[@id="react-root"]/section/div/div/div[2]/form/span/button').click()
+        except NoSuchElementException:
+            pass
+
+
+    def closeAppOverlays(self):
+        browser = self.browser
+        # Close Notification Overlay
+        try:
+            browser.find_element_by_xpath('/html/body/div[4]/div/div/div/div[3]/button[2]').click()
+        except NoSuchElementException:
+            pass
 
         # Close 'get app' overlay if present
         try:
@@ -55,7 +77,7 @@ class InstaBot():
         # Close bottom app ad
         try:
             browser.find_element_by_class_name('uDNXD').click()
-        except NoSuchELementException:
+        except NoSuchElementException:
             pass
 
         sleep(2)
@@ -76,8 +98,13 @@ class InstaBot():
 
 
 
-username = 'username'
-password = 'password'
+username = ''
+password = ''
 myIGBot = InstaBot(username, password)
 myIGBot.login()
+sleep(2)
+myIGBot.verificationCheck()
+sleep(2)
+myIGBot.closeAppOverlays()
+sleep(5)
 myIGBot.like_hashtags('skateboarding')
