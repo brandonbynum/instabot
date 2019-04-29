@@ -56,7 +56,7 @@ class InstaBot():
         # browser.find_element_by_name('password').send_keys(password)
 
         # Enter Username
-        usernameElement = browser.find_element_by_name('username')
+        usernameElement = browser.find_element_by_xpath('//input[@name="username"]')
         usernameElement.clear()
         usernameElement.send_keys(self.username)
 
@@ -155,14 +155,17 @@ class InstaBot():
     def like_photos(self, links):
         for photoLink in links:
             self.browser.get(photoLink)
-            sleep(2)
+            sleep(1)
             print(photoLink, 'loaded \n')
 
+            # Like photo
+            self.browser.find_element_by_xpath('//button/span[@aria-label="Like"]').click()
 
 
 
-username = ''
-password = ''
+
+username = 'munybrr'
+password = 'Whoisthis2124!'
 myIGBot = InstaBot(username, password)
 
 myIGBot.login()
