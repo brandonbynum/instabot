@@ -14,7 +14,6 @@ class InstaBot():
         self.password = password
         self.browser = webdriver.Chrome()
 
-
     # Checks if an element exists by searching for it's expected xpath
     def exists_by_xpath(self, xpath):
         try:
@@ -37,12 +36,14 @@ class InstaBot():
         try:
             # Go to login page.
             login_elem = WebDriverWait(browser, 20).until(
-            EC.element_to_be_clickable((By.XPATH, '//*[@id="react-root"]/section/main/article/div[2]/div[2]/p/a')))
+                EC.element_to_be_clickable((By.XPATH,
+                '//*[@id="react-root"]/section/main/article/div[2]/div[2]/p/a')))
+
             # login_elem = browser.find_element_by_xpath('//a[text() = "Log in"]')
             login_elem.click()
             print('Logging in...')
-
             sleep(2)
+
         except Exception as e:
             self.closeProgram('Wrong password entered.')
 
@@ -54,34 +55,34 @@ class InstaBot():
         # password = getpass.getpass('Password: ')
         # browser.find_element_by_name('password').send_keys(password)
 
-        # Enter Username and Password
+        # Enter Username
         usernameElement = browser.find_element_by_name('username')
         usernameElement.clear()
         usernameElement.send_keys(self.username)
 
+        # Enter Password
         passwordElement = browser.find_element_by_name('password')
         passwordElement.clear()
         passwordElement.send_keys(self.password)
-        sleep(1)
+        sleep(2)
 
         # Click login button
-        browser.find_element_by_xpath('//button[text()="Log in"]').click()
+        browser.find_element_by_xpath('//button/div[text()="Log In"]').click()
         sleep(3)
 
         if self.exists_by_xpath('//*[@id="react-root"]/section/div/div/div[3]/form/span/button[text()="Send Security Code"]'):
             print('Checking for verification...')
             self.verificationCheck()
+            sleep(2)
         # Check if the login has been successful, exit program otherwise.
-        elif self.exists_by_xpath('//*[@id="react-root"]/section/main/section/div[3]/div[1]/div/div[2]/div[1]/a[text()=' + username +']'):
-            print('Login Successs')
-        else:
+        elif self.exists_by_xpath('//*[@id="slfErrorAlert"]'):
             self.closeProgram('Password was incorrect. Please check password before running again.')
-
+        else:
+            print('Welcome', self.username + "!")
 
     def verificationCheck(self):
         browser = self.browser
         attempts = 5
-
         # Check if verification code is needed.
         # If so, enter the code in terminal.
         try:
@@ -89,8 +90,9 @@ class InstaBot():
             print('A security code is required to login. Please check your email for the code and enter the code below. (' + str(attempts) + ' attempts remaining)')
 
             # Loop giving 5 attempts to correctly enter code.
-            for i in range(5):
+            for i in range(attempts):
                 code = input('Code: ')
+
                 # Input Key and Submit
                 codeElement = browser.find_element_by_xpath('//*[@id="security_code"]')
                 codeElement.send_keys(code)
@@ -109,7 +111,6 @@ class InstaBot():
                         codeElement.clear()
                 else:
                     break
-
         except NoSuchElementException:
             pass
 
@@ -132,26 +133,30 @@ class InstaBot():
 
 
 
-    def like_hashtags(self, hashtag):
+    def get_hashtag_links(self, hashtag):
+        def printLinks(links):
+            for i, link in enumerate(post_links):
+                print('\tLink #' + str(i + 1) +': ' + str(link))
+
         browser = self.browser
         print("Searching hashtag '" + hashtag + "'")
         browser.get("https://www.instagram.com/explore/tags/" + hashtag + "/")
         sleep(2)
-        for i in range(1,3):
-            browser.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+        # for i in range(1,3):
+        #     browser.execute_script("window.scrollTo(0, document.body.scrollHeight);")
 
-        links = browser.find_elements_by_tag_name('a')
 
-        post_links = [elem.get_attribute('href') for elem in links]
+        elements = browser.find_elements_by_xpath("//a[contains(@href, '/p/')]")
+        post_links = [elem.get_attribute('href') for elem in elements]
         print('post_links1:\n\t')
-        for i, link in enumerate(post_links):
-            print('\tLink #' + str(i + 1) +': ' + str(link))
-        print('-----------------------------')
+        printLinks(post_links)
+        return post_links
 
-        post_links = [href for href in post_links if hashtag in href]
-        print('#' + hashtag + ' photos: ' + str(len(post_links)))
-        for i, link in enumerate(post_links):
-            print('\tLink #' + str(i + 1) +': ' + link)
+    def like_photos(self, links):
+        for photoLink in links:
+            self.browser.get(photoLink)
+            sleep(2)
+            print(photoLink, 'loaded \n')
 
 
 
@@ -161,9 +166,9 @@ password = ''
 myIGBot = InstaBot(username, password)
 
 myIGBot.login()
-
 myIGBot.verificationCheck()
 sleep(1)
 #myIGBot.closeAppOverlays()
-sleep(1)
-#myIGBot.like_hashtags('skateboarding')
+# sleep(1)
+links = myIGBot.get_hashtag_links('analog')
+myIGBot.like_photos(links)
