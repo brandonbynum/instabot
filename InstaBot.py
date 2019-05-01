@@ -19,73 +19,86 @@ class InstaBot():
         try:
             self.browser.find_element_by_xpath(xpath)
         except NoSuchElementException:
+            print(xpath, "does not exist\n")
             return False
         return True
 
-    def closeProgram(self, reason):
+    def quitDriver(self, reason):
         print(reason + '\nClosing InstaBot. GoodBye.')
         self.browser.quit()
         sys.exit()
 
 
     def login(self):
+        if self.username == '':
+            print('Error: No username entered')
+            self.quitDriver()
+
+        if self.password == '':
+            print('Error: No password entered')
+            self.quitDriver()
+
         # Starting a new browser session / driver.
         browser = self.browser
         browser.get('https://instagram.com')
 
         try:
-            # Go to login page.
+            # Wait for page to load until login page link to become clickable
             login_elem = WebDriverWait(browser, 20).until(
                 EC.element_to_be_clickable((By.XPATH,
                 '//*[@id="react-root"]/section/main/article/div[2]/div[2]/p/a')))
 
-            # login_elem = browser.find_element_by_xpath('//a[text() = "Log in"]')
-            login_elem.click()
-            print('Logging in...')
-            sleep(2)
-
+            # Navigate to login page by clicking the link
+            try:
+                login_elem.click()
+                print('Navigating to login page')
+            except Exception as e:
+                self.quitDriver('Error:', e , '\nLogin Link could not be clicked and/or found!')
         except Exception as e:
-            self.closeProgram('Wrong password entered.')
+            self.quitDriver('Error:', e , '\nPage could not load or login link could not be found.')
 
-        # Enter instagram username from console.
-        # username = input('Username: ')
-        # browser.find_element_by_name('username').send_keys(username)
-
-        # Enter instagram password from console
-        # password = getpass.getpass('Password: ')
-        # browser.find_element_by_name('password').send_keys(password)
-
+        sleep(1)
         # Enter Username
-        usernameElement = browser.find_element_by_xpath('//input[@name="username"]')
+        userInputXPath = '//input[@name="username"]'
+        usernameElement = WebDriverWait(browser, 10).until(
+            EC.element_to_be_clickable((By.XPATH, '//input[@name="username"]'))
+        )
+        #usernameElement = browser.find_element_by_xpath('//input[@name="username"]')
         usernameElement.clear()
         usernameElement.send_keys(self.username)
 
+        sleep(1)
+
         # Enter Password
-        passwordElement = browser.find_element_by_name('password')
+        passwordElement = WebDriverWait(browser, 10).until(
+            EC.element_to_be_clickable((By.XPATH, '//input[@name="password"]'))
+        )
+        #passwordElement = browser.find_element_by_name('password')
         passwordElement.clear()
         passwordElement.send_keys(self.password)
-        sleep(2)
 
         # Click login button
         browser.find_element_by_xpath('//button/div[text()="Log In"]').click()
-        sleep(3)
 
-        if self.exists_by_xpath('//*[@id="react-root"]/section/div/div/div[3]/form/span/button[text()="Send Security Code"]'):
-            print('Checking for verification...')
-            self.verificationCheck()
-            sleep(2)
+        # Check for 2-factor authentication
+        self.verificationCheck()
+
         # Check if the login has been successful, exit program otherwise.
-        elif self.exists_by_xpath('//*[@id="slfErrorAlert"]'):
-            self.closeProgram('Password was incorrect. Please check password before running again.')
+        if self.exists_by_xpath('//*[@id="slfErrorAlert"]'):
+            self.quitDriver('Password was incorrect. Please check password before running bot again.')
         else:
+            print('Login Successul!')
             print('Welcome', self.username + "!")
 
     def verificationCheck(self):
         browser = self.browser
         attempts = 5
+        print('Checking for verification...')
+
         # Check if verification code is needed.
         # If so, enter the code in terminal.
-        try:
+        if self.exists_by_xpath('//*[@id="react-root"]/section/div/div/div[3]/form/span/button[text()="Send Security Code"]'):
+            # Click button to send code
             browser.find_element_by_xpath('//*[@id="react-root"]/section/div/div/div[3]/form/span/button[text()="Send Security Code"]').click()
             print('A security code is required to login. Please check your email for the code and enter the code below. (' + str(attempts) + ' attempts remaining)')
 
@@ -99,20 +112,20 @@ class InstaBot():
 
                 # Submit verification code
                 browser.find_element_by_xpath('//*[@id="react-root"]/section/div/div/div[2]/form/span/button').click()
-                sleep(1)
+                browser.implicitly_wait(1)
 
                 # If code is wrong, reduce allowed attempts otherwise continue.
                 if self.exists_by_xpath('//*[@id="form_error"]/p'):
                     attempts -= 1
                     if attempts == 0:
-                        self.closeProgram('Too many failed verification code attempts.')
+                        self.quitDriver('Too many failed verification code attempts.')
                     else:
                         print('Wrong code, try again. (' + str(attempts) + ' attempts remaining)')
                         codeElement.clear()
                 else:
                     break
-        except NoSuchElementException:
-            pass
+
+        print('No extra verification needed.')
 
 
 
@@ -153,25 +166,29 @@ class InstaBot():
         return post_links
 
     def like_photos(self, links):
+        likeXpath = '//button/span[@aria-label="Like"]'
+        likedXpath = '//button/span[@aria-label="Unlike"]'
+
         for photoLink in links:
             self.browser.get(photoLink)
-            sleep(1)
+            sleep(2)
             print(photoLink, 'loaded \n')
 
-            # Like photo
-            self.browser.find_element_by_xpath('//button/span[@aria-label="Like"]').click()
+            # Check if photo has already been liked, if not, like it
+            if self.exists_by_xpath(likedXpath):
+                print('Photo Already Liked!')
+            elif self.exists_by_xpath(likeXpath):
+                # Like photo
+                self.browser.find_element_by_xpath(likeXpath).click()
+                print('Photo Liked!')
 
 
-
-
-username = 'munybrr'
-password = 'Whoisthis2124!'
+username = ''
+password = ''
+print('Creating InstaBot instance')
 myIGBot = InstaBot(username, password)
 
 myIGBot.login()
-myIGBot.verificationCheck()
 sleep(1)
-#myIGBot.closeAppOverlays()
-# sleep(1)
-links = myIGBot.get_hashtag_links('analog')
-myIGBot.like_photos(links)
+#links = myIGBot.get_hashtag_links('analog')
+myIGBot.like_photos(['https://www.instagram.com/p/Bw2F1wtgebC/'])
