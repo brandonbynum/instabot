@@ -27,9 +27,8 @@ class InstaBot():
         sys.exit()
 
 
-    def login(self):
-        username = input('Time to log in. \nPlease enter your username: ')
-        password = getpass.getpass('Password:')
+    def login(self, username, password):
+
         # Starting a new browser session / driver.
         print('Connecting to Instagram ...')
         browser = self.browser
@@ -216,8 +215,11 @@ print("Currently the only supported feature is liking images based on hash tag s
 hashtags = input('Please enter hashtags you would like to search separated by commas. \nEx. "skateboarding, basketball, shoes".\n:')
 hashtags = [hashtag.strip() for hashtag in hashtags.split(',')]
 
+username = input('Time to log in. \nPlease enter your username: ')
+password = getpass.getpass('Password:')
+
 myIGBot = InstaBot()
-myIGBot.login()
+myIGBot.login(username, password)
 sleep(1)
 links = myIGBot.get_hashtag_links(hashtags)
 myIGBot.like_photos(links)
