@@ -28,6 +28,8 @@ class InstaBot():
 
 
     def login(self):
+        username = input('Time to log in. \nPlease enter your username: ')
+        password = getpass.getpass('Password:')
         # Starting a new browser session / driver.
         print('Connecting to Instagram ...')
         browser = self.browser
@@ -55,7 +57,6 @@ class InstaBot():
             EC.presence_of_element_located((By.XPATH, '//input[@name="username"]'))
         )
         usernameElement.clear()
-        username = input('Time to log in. \nPlease enter your username: ')
         usernameElement.send_keys(username)
 
 
@@ -64,7 +65,6 @@ class InstaBot():
             EC.presence_of_element_located((By.XPATH, '//input[@name="password"]'))
         )
         passwordElement.clear()
-        password = getpass.getpass('Password:')
         passwordElement.send_keys(password)
 
         # Click login button
@@ -72,24 +72,28 @@ class InstaBot():
 
         sleep(1)
 
-        # Check for 2-factor authentication
-        self.verificationCheck()
-
-        # Check if the login has been successful, exit program otherwise.
-
-        if self.exists_by_xpath('//*[@id="slfErrorAlert"]'):
+        # Check if the login has been successful, exit program otherwise.\
+        try:
+            WebDriverWait(browser, 2).until(
+                EC.presence_of_element_located((By.XPATH, '//*[@id="slfErrorAlert"]'))
+            )
             self.quitDriver('Password was incorrect. Please check password before running bot again.')
-        else:
+
+        except:
+            print('Password accepted.')
+            # Check for 2-factor authentication
+            self.verificationCheck()
             try:
                 WebDriverWait(browser, 60).until(
                     EC.presence_of_element_located((By.XPATH, '//span[@aria-label="Profile"]'))
                 )
+                print('Login Successul!')
+                print('Welcome', username + "!")
             except Exception as e:
                 print(e)
                 self.quitDriver('An error occurred!')
 
-            print('Login Successul!')
-            print('Welcome', username + "!")
+
 
     def verificationCheck(self):
         browser = self.browser
