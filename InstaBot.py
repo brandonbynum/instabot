@@ -19,7 +19,7 @@ class InstaBot():
         try:
             self.browser.find_element_by_xpath(xpath)
         except NoSuchElementException:
-            print(xpath, "does not exist\n")
+            #print(xpath, "does not exist")
             return False
         return True
 
@@ -146,41 +146,62 @@ class InstaBot():
 
 
 
-    def get_hashtag_links(self, hashtag):
+    def get_hashtag_links(self, hashtagList):
         def printLinks(links):
-            for i, link in enumerate(post_links):
-                print('\tLink #' + str(i + 1) +': ' + str(link))
+            for i, link in enumerate(links):
+                print('\tImage Link #' + str(i + 1) +': ' + str(link))
 
         browser = self.browser
-        print("Searching hashtag '" + hashtag + "'")
-        browser.get("https://www.instagram.com/explore/tags/" + hashtag + "/")
-        sleep(2)
-        # for i in range(1,3):
-        #     browser.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+        postLinks = []
+        for hashtag in hashtagList:
+            print("Searching hashtag '" + hashtag + "'")
+            browser.get("https://www.instagram.com/explore/tags/" + hashtag + "/")
+            sleep(1)
+            # for i in range(1,3):
+            #     browser.execute_script("window.scrollTo(0, document.body.scrollHeight);")
 
+            # Get all the elements containing href tags
+            elements = browser.find_elements_by_xpath("//a[contains(@href, '/p/')]")
+            print("Gathering", hashtag, "image links")
+            for elem in elements:
+                # Append each href link to the list of image links
+                postLinks.append(elem.get_attribute('href'))
 
-        elements = browser.find_elements_by_xpath("//a[contains(@href, '/p/')]")
-        post_links = [elem.get_attribute('href') for elem in elements]
-        print('post_links1:\n\t')
-        printLinks(post_links)
-        return post_links
+        print(str(len(postLinks)), 'photos gathered')
+        return postLinks
 
     def like_photos(self, links):
         likeXpath = '//button/span[@aria-label="Like"]'
         likedXpath = '//button/span[@aria-label="Unlike"]'
 
-        for photoLink in links:
+        photosLiked = 0
+        photosLikedAlready = 0
+        photosDidntLoad = 0
+        totalPhotos = len(links)
+
+        for i, photoLink in enumerate(links):
             self.browser.get(photoLink)
-            sleep(2)
-            print(photoLink, 'loaded \n')
+            sleep(1)
+            photoNum = i + 1
+            print('\nPhoto #' + str(photoNum), 'loaded:', photoLink)
 
             # Check if photo has already been liked, if not, like it
             if self.exists_by_xpath(likedXpath):
                 print('Photo Already Liked!')
+                photosLikedAlready += 1
             elif self.exists_by_xpath(likeXpath):
-                # Like photo
                 self.browser.find_element_by_xpath(likeXpath).click()
                 print('Photo Liked!')
+                photosLiked +=1
+            else:
+                print('Error loading photo')
+                photosDidntLoad += 1
+
+        print('\n\nFinished liking photos.')
+        print('Photos Liked:', photosLiked)
+        print('Photos already liked:', photosLikedAlready)
+        print('Photos unable to load:', photosDidntLoad)
+        print('\n\n')
 
 
 username = ''
@@ -190,5 +211,8 @@ myIGBot = InstaBot(username, password)
 
 myIGBot.login()
 sleep(1)
-#links = myIGBot.get_hashtag_links('analog')
-myIGBot.like_photos(['https://www.instagram.com/p/Bw2F1wtgebC/'])
+hashtags = ['analog', 'kodak', 'kodaklosers']
+links = myIGBot.get_hashtag_links(hashtags)
+myIGBot.like_photos(links)
+
+myIGBot.quitDriver('All photos liked! Goodbye.')
