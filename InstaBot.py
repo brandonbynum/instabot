@@ -9,9 +9,7 @@ import sys
 
 
 class InstaBot():
-    def __init__(self, username, password):
-        self.username = username
-        self.password = password
+    def __init__(self):
         self.browser = webdriver.Chrome()
 
     # Checks if an element exists by searching for it's expected xpath
@@ -30,20 +28,13 @@ class InstaBot():
 
 
     def login(self):
-        if self.username == '':
-            print('Error: No username entered')
-            self.quitDriver()
-
-        if self.password == '':
-            print('Error: No password entered')
-            self.quitDriver()
-
         # Starting a new browser session / driver.
+        print('Connecting to Instagram ...')
         browser = self.browser
         browser.get('https://instagram.com')
 
         try:
-            # Wait for page to load until login page link to become clickable
+            # Wait for page to load then locate login page link
             login_elem = WebDriverWait(browser, 20).until(
                 EC.element_to_be_clickable((By.XPATH,
                 '//*[@id="react-root"]/section/main/article/div[2]/div[2]/p/a')))
@@ -57,38 +48,48 @@ class InstaBot():
         except Exception as e:
             self.quitDriver('Error:', e , '\nPage could not load or login link could not be found.')
 
-        sleep(1)
-        # Enter Username
-        userInputXPath = '//input[@name="username"]'
-        usernameElement = WebDriverWait(browser, 10).until(
-            EC.element_to_be_clickable((By.XPATH, '//input[@name="username"]'))
-        )
-        #usernameElement = browser.find_element_by_xpath('//input[@name="username"]')
-        usernameElement.clear()
-        usernameElement.send_keys(self.username)
+        sleep(2)
 
-        sleep(1)
+        # Enter Username
+        usernameElement = WebDriverWait(browser, 10).until(
+            EC.presence_of_element_located((By.XPATH, '//input[@name="username"]'))
+        )
+        usernameElement.clear()
+        username = input('Time to log in. \nPlease enter your username: ')
+        usernameElement.send_keys(username)
+
 
         # Enter Password
         passwordElement = WebDriverWait(browser, 10).until(
-            EC.element_to_be_clickable((By.XPATH, '//input[@name="password"]'))
+            EC.presence_of_element_located((By.XPATH, '//input[@name="password"]'))
         )
-        #passwordElement = browser.find_element_by_name('password')
         passwordElement.clear()
-        passwordElement.send_keys(self.password)
+        password = getpass.getpass('Password:')
+        passwordElement.send_keys(password)
 
         # Click login button
         browser.find_element_by_xpath('//button/div[text()="Log In"]').click()
+
+        sleep(1)
 
         # Check for 2-factor authentication
         self.verificationCheck()
 
         # Check if the login has been successful, exit program otherwise.
+
         if self.exists_by_xpath('//*[@id="slfErrorAlert"]'):
             self.quitDriver('Password was incorrect. Please check password before running bot again.')
         else:
+            try:
+                WebDriverWait(browser, 60).until(
+                    EC.presence_of_element_located((By.XPATH, '//span[@aria-label="Profile"]'))
+                )
+            except Exception as e:
+                print(e)
+                self.quitDriver('An error occurred!')
+
             print('Login Successul!')
-            print('Welcome', self.username + "!")
+            print('Welcome', username + "!")
 
     def verificationCheck(self):
         browser = self.browser
@@ -97,7 +98,10 @@ class InstaBot():
 
         # Check if verification code is needed.
         # If so, enter the code in terminal.
-        if self.exists_by_xpath('//*[@id="react-root"]/section/div/div/div[3]/form/span/button[text()="Send Security Code"]'):
+        try:
+            WebDriverWait(browser, 5).until(
+                EC.presence_of_element_located((By.XPATH, '//*[@id="react-root"]/section/div/div/div[3]/form/span/button[text()="Send Security Code"]'))
+            )
             # Click button to send code
             browser.find_element_by_xpath('//*[@id="react-root"]/section/div/div/div[3]/form/span/button[text()="Send Security Code"]').click()
             print('A security code is required to login. Please check your email for the code and enter the code below. (' + str(attempts) + ' attempts remaining)')
@@ -112,7 +116,7 @@ class InstaBot():
 
                 # Submit verification code
                 browser.find_element_by_xpath('//*[@id="react-root"]/section/div/div/div[2]/form/span/button').click()
-                browser.implicitly_wait(1)
+                sleep(1)
 
                 # If code is wrong, reduce allowed attempts otherwise continue.
                 if self.exists_by_xpath('//*[@id="form_error"]/p'):
@@ -124,8 +128,8 @@ class InstaBot():
                         codeElement.clear()
                 else:
                     break
-
-        print('No extra verification needed.')
+        except:
+            print('No extra verification needed.')
 
 
 
@@ -147,27 +151,24 @@ class InstaBot():
 
 
     def get_hashtag_links(self, hashtagList):
-        def printLinks(links):
-            for i, link in enumerate(links):
-                print('\tImage Link #' + str(i + 1) +': ' + str(link))
-
         browser = self.browser
         postLinks = []
         for hashtag in hashtagList:
             print("Searching hashtag '" + hashtag + "'")
             browser.get("https://www.instagram.com/explore/tags/" + hashtag + "/")
-            sleep(1)
-            # for i in range(1,3):
-            #     browser.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+
+            for i in range(1,3):
+                browser.execute_script("window.scrollTo(0, document.body.scrollHeight);")
 
             # Get all the elements containing href tags
+            print("Collecting", hashtag, "image links ...")
             elements = browser.find_elements_by_xpath("//a[contains(@href, '/p/')]")
-            print("Gathering", hashtag, "image links")
             for elem in elements:
                 # Append each href link to the list of image links
                 postLinks.append(elem.get_attribute('href'))
+            print('Finished collecting', str(len(elements)), "photos from '" + hashtag + "'." )
 
-        print(str(len(postLinks)), 'photos gathered')
+        print(str(len(postLinks)), 'photos collected total.')
         return postLinks
 
     def like_photos(self, links):
@@ -204,15 +205,17 @@ class InstaBot():
         print('\n\n')
 
 
-username = ''
-password = ''
-print('Creating InstaBot instance')
-myIGBot = InstaBot(username, password)
 
+print("Welcome to Instabot!")
+
+print("Currently the only supported feature is liking images based on hash tag searches.")
+hashtags = input('Please enter hashtags you would like to search separated by commas. \nEx. "skateboarding, basketball, shoes".\n:')
+hashtags = [hashtag.strip() for hashtag in hashtags.split(',')]
+
+myIGBot = InstaBot()
 myIGBot.login()
 sleep(1)
-hashtags = ['analog', 'kodak', 'kodaklosers']
 links = myIGBot.get_hashtag_links(hashtags)
 myIGBot.like_photos(links)
 
-myIGBot.quitDriver('All photos liked! Goodbye.')
+myIGBot.quitDriver('Task complete.')
