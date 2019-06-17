@@ -8,6 +8,7 @@ import getpass
 import sys
 
 
+
 class InstaBot():
     def __init__(self):
         self.browser = webdriver.Chrome()
@@ -22,34 +23,16 @@ class InstaBot():
         return True
 
     def quitDriver(self, reason):
-        print(reason + '\nClosing InstaBot. GoodBye.')
+        print(reason + '\nClosing InstaBot. GoodBye.\n\n')
         self.browser.quit()
         sys.exit()
 
 
     def login(self, username, password):
-
         # Starting a new browser session / driver.
         print('Connecting to Instagram ...')
         browser = self.browser
-        browser.get('https://instagram.com')
-
-        try:
-            # Wait for page to load then locate login page link
-            login_elem = WebDriverWait(browser, 20).until(
-                EC.element_to_be_clickable((By.XPATH,
-                '//*[@id="react-root"]/section/main/article/div[2]/div[2]/p/a')))
-
-            # Navigate to login page by clicking the link
-            try:
-                login_elem.click()
-                print('Navigating to login page')
-            except Exception as e:
-                self.quitDriver('Error:', e , '\nLogin Link could not be clicked and/or found!')
-        except Exception as e:
-            self.quitDriver('Error:', e , '\nPage could not load or login link could not be found.')
-
-        sleep(2)
+        browser.get('https://instagram.com/accounts/login')
 
         # Enter Username
         usernameElement = WebDriverWait(browser, 10).until(
@@ -80,8 +63,10 @@ class InstaBot():
 
         except:
             print('Password accepted.')
+
             # Check for 2-factor authentication
             self.verificationCheck()
+
             try:
                 WebDriverWait(browser, 60).until(
                     EC.presence_of_element_located((By.XPATH, '//span[@aria-label="Profile"]'))
@@ -97,12 +82,12 @@ class InstaBot():
     def verificationCheck(self):
         browser = self.browser
         attempts = 5
-        print('Checking for verification...')
+        print('Checking for additional verification ...')
 
         # Check if verification code is needed.
         # If so, enter the code in terminal.
         try:
-            WebDriverWait(browser, 5).until(
+            WebDriverWait(browser, 3).until(
                 EC.presence_of_element_located((By.XPATH, '//*[@id="react-root"]/section/div/div/div[3]/form/span/button[text()="Send Security Code"]'))
             )
             # Click button to send code
@@ -119,18 +104,21 @@ class InstaBot():
 
                 # Submit verification code
                 browser.find_element_by_xpath('//*[@id="react-root"]/section/div/div/div[2]/form/span/button').click()
-                sleep(1)
+                print('Validating code ...')
 
                 # If code is wrong, reduce allowed attempts otherwise continue.
-                if self.exists_by_xpath('//*[@id="form_error"]/p'):
+                try:
+                    WebDriverWait(browser, 5).until(
+                        EC.presence_of_element_located((By.XPATH, '//span[@aria-label="Profile"]'))
+                    )
+                    break
+                except Exception as e:
                     attempts -= 1
                     if attempts == 0:
                         self.quitDriver('Too many failed verification code attempts.')
                     else:
                         print('Wrong code, try again. (' + str(attempts) + ' attempts remaining)')
                         codeElement.clear()
-                else:
-                    break
         except:
             print('No extra verification needed.')
 
@@ -149,7 +137,7 @@ class InstaBot():
                 self.browser.find_element_by_xpath(overlay).click()
                 print("Overlays closed.")
             else:
-                print("No Overlays found.")
+                print("No overlays found.")
 
 
 
@@ -160,8 +148,8 @@ class InstaBot():
             print("Searching hashtag '" + hashtag + "'")
             browser.get("https://www.instagram.com/explore/tags/" + hashtag + "/")
 
-            for i in range(1,3):
-                browser.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+            # for i in range(1,3):
+            #     browser.execute_script("window.scrollTo(0, document.body.scrollHeight);")
 
             # Get all the elements containing href tags
             print("Collecting", hashtag, "image links ...")
@@ -201,27 +189,8 @@ class InstaBot():
                 print('Error loading photo')
                 photosDidntLoad += 1
 
-        print('\n\nFinished liking photos.')
+        print('\nFinished liking photos.')
         print('Photos Liked:', photosLiked)
         print('Photos already liked:', photosLikedAlready)
         print('Photos unable to load:', photosDidntLoad)
-        print('\n\n')
-
-
-
-print("Welcome to Instabot!")
-
-print("Currently the only supported feature is liking images based on hash tag searches.")
-hashtags = input('Please enter hashtags you would like to search separated by commas. \nEx. "skateboarding, basketball, shoes".\n:')
-hashtags = [hashtag.strip() for hashtag in hashtags.split(',')]
-
-username = input('Time to log in. \nPlease enter your username: ')
-password = getpass.getpass('Password:')
-
-myIGBot = InstaBot()
-myIGBot.login(username, password)
-sleep(1)
-links = myIGBot.get_hashtag_links(hashtags)
-myIGBot.like_photos(links)
-
-myIGBot.quitDriver('Task complete.')
+        print('\n')
