@@ -1,4 +1,4 @@
-USERNAME = 'munybrr'
+USERNAME = ''
 
 PASSWORD = ''
 
@@ -6,4 +6,4 @@ LIKE_FEED = False
 
 LIKE_HASHTAGS = True
 
-HASHTAGS = ['nightwalkermagazine', 'yashicat4', 'everybodyfilm']
+HASHTAGS = ['35mm', 'filmwave', 'filmcalifornia', 'shootwithfilm', 'senekamagazine','infilmwetrust', 'searchandfilm', 'thinkveryfilm']
