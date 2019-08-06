@@ -6,7 +6,6 @@ the engagement a profile receives on a specific number of recent posts.
 
 
 # InstaBot.py
-Currently logs into a user's account given hard coded username and password, with optional input requests commented out.
-Then goes to the explore page and searches user's desired hashtag.
+Currently logs into a user's account searching the explore page and searches user's desired hashtag.
 
-Goal is to like maximum amount of photos on the explore page from specific hashtags given, comment on photos, and like photos on the user's feed.
+Goal is to like maximum amount of photos on the explore page from specific hashtags given, comment on photos, and like photos on the user's feed. All of these being optional and configurations that can be changed.
