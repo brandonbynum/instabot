@@ -67,15 +67,15 @@ class InstaBot():
             # Check for 2-factor authentication
             self.verificationCheck()
 
-            try:
-                WebDriverWait(browser, 60).until(
-                    EC.presence_of_element_located((By.XPATH, '//span[@aria-label="Profile"]'))
-                )
-                print('Login Successul!')
-                print('Welcome', username + "!")
-            except Exception as e:
-                print(e)
-                self.quitDriver('An error occurred!')
+        # try:
+        #     WebDriverWait(browser, 60).until(
+        #         EC.presence_of_element_located((By.XPATH, f'//*[@id="react-root"]/section/main/section/div[3]/div[1]/div/div[2]/div[1]/a[href=(/{username})/]'))
+        #     )
+        #     print('Login Successul!')
+        #     print('Welcome', username + "!")
+        # except Exception as e:
+        #     print(e)
+        #     self.quitDriver('Could not confirm login!')
 
 
 
@@ -105,6 +105,8 @@ class InstaBot():
                 # Submit verification code
                 browser.find_element_by_xpath('//*[@id="react-root"]/section/div/div/div[2]/form/span/button').click()
                 print('Validating code ...')
+
+                self.closeAppOverlays()
 
                 # If code is wrong, reduce allowed attempts otherwise continue.
                 try:
@@ -137,7 +139,7 @@ class InstaBot():
                 self.browser.find_element_by_xpath(overlay).click()
                 print("Overlays closed.")
             else:
-                print("No overlays found.")
+                print("No overlay found.")
 
 
 
@@ -145,14 +147,14 @@ class InstaBot():
         browser = self.browser
         postLinks = []
         for hashtag in hashtagList:
-            print("Searching hashtag '" + hashtag + "'")
-            browser.get("https://www.instagram.com/explore/tags/" + hashtag + "/")
+            print(f'Searching hashtag {hashtag}')
+            browser.get(f'https://www.instagram.com/explore/tags/{hashtag}/')
 
             # for i in range(1,3):
             #     browser.execute_script("window.scrollTo(0, document.body.scrollHeight);")
 
             # Get all the elements containing href tags
-            print("Collecting", hashtag, "image links ...")
+            print(f'Collecting {hashtag} image links ...')
             elements = browser.find_elements_by_xpath("//a[contains(@href, '/p/')]")
             for elem in elements:
                 # Append each href link to the list of image links
